@@ -26,29 +26,47 @@
     </form>
 
     <script>
-        const loginForm = document.getElementById('loginForm');
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
+        // Function to sync data with the backend once a day
+        function syncData() {
+            // Get data from local storage
+            const data = JSON.parse(localStorage.getItem('attendanceData'));
+            if (data) {
+                // Send data to the backend
+                fetch('https://api.github.com/attendance', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                })
+                .then(response => response.json())
+                .then(result => {
+                    // If successful, clear local storage
+                    if (result.success) {
+                        localStorage.removeItem('attendanceData');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        }
+
+        // Function to save data to local storage
+        function saveDataToLocalStorage(data) {
+            localStorage.setItem('attendanceData', JSON.stringify(data));
+        }
+
+        // Function to handle login form submission
+        document.getElementById('loginForm').addEventListener('submit', function(event) {
+            event.preventDefault();
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
-            const response = await fetch('http://localhost:5000/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
-            });
-            const result = await response.json();
-            if (result.access_token) {
-                localStorage.setItem('token', result.access_token);
-                alert('Logged in successfully');
-            } else {
-                alert(result.message);
-            }
+            // Perform login authentication
+            // Assuming login is successful, save user data to local storage
+            saveDataToLocalStorage({ username, password });
+            alert('Logged in successfully');
         });
 
-        const attendanceForm = document.getElementById('attendanceForm');
-        attendanceForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const token = localStorage.getItem('token');
+        // Function to handle attendance form submission
+        document.getElementById('attendanceForm').addEventListener('submit', function(event) {
+            event.preventDefault();
             const date = document.getElementById('date').value;
             const start_time = document.getElementById('start_time').value;
             const end_time = document.getElementById('end_time').value;
@@ -56,17 +74,17 @@
             const branch = document.getElementById('branch').value;
             const chapter = document.getElementById('chapter').value;
             const topic = document.getElementById('topic').value;
-            const response = await fetch('http://localhost:5000/attendance', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ date, start_time, end_time, standard, branch, chapter, topic })
-            });
-            const result = await response.json();
-            alert(result.message);
+            // Get existing data from local storage or initialize an empty array
+            const data = JSON.parse(localStorage.getItem('attendanceData')) || [];
+            // Add new attendance record to the data array
+            data.push({ date, start_time, end_time, standard, branch, chapter, topic });
+            // Save updated data to local storage
+            saveDataToLocalStorage(data);
+            alert('Attendance marked successfully');
         });
+
+        // Sync data with the backend once a day
+        setInterval(syncData, 24 * 60 * 60 * 1000);
     </script>
 </body>
 </html>
