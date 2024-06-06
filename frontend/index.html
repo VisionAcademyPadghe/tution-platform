@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tuition Attendance</title>
+</head>
+<body>
+    <h2>Login</h2>
+    <form id="loginForm">
+        <input type="text" id="username" placeholder="Username" required>
+        <input type="password" id="password" placeholder="Password" required>
+        <button type="submit">Login</button>
+    </form>
+
+    <h2>Mark Attendance</h2>
+    <form id="attendanceForm">
+        <input type="date" id="date" required>
+        <input type="time" id="start_time" required>
+        <input type="time" id="end_time" required>
+        <input type="text" id="standard" placeholder="Standard" required>
+        <input type="text" id="branch" placeholder="Branch" required>
+        <input type="text" id="chapter" placeholder="Chapter" required>
+        <input type="text" id="topic" placeholder="Topic" required>
+        <button type="submit">Submit</button>
+    </form>
+
+    <script>
+        const loginForm = document.getElementById('loginForm');
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const response = await fetch('http://localhost:5000/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const result = await response.json();
+            if (result.access_token) {
+                localStorage.setItem('token', result.access_token);
+                alert('Logged in successfully');
+            } else {
+                alert(result.message);
+            }
+        });
+
+        const attendanceForm = document.getElementById('attendanceForm');
+        attendanceForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const token = localStorage.getItem('token');
+            const date = document.getElementById('date').value;
+            const start_time = document.getElementById('start_time').value;
+            const end_time = document.getElementById('end_time').value;
+            const standard = document.getElementById('standard').value;
+            const branch = document.getElementById('branch').value;
+            const chapter = document.getElementById('chapter').value;
+            const topic = document.getElementById('topic').value;
+            const response = await fetch('http://localhost:5000/attendance', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ date, start_time, end_time, standard, branch, chapter, topic })
+            });
+            const result = await response.json();
+            alert(result.message);
+        });
+    </script>
+</body>
+</html>
